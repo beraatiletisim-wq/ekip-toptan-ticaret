@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ekip Toptan Ticaret</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f4f6;font-family:Arial;color:#17202a}header{background:#111827;color:#fff;padding:22px;text-align:center}main{max-width:760px;margin:18px auto;padding:0 14px}.card{background:#fff;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 4px 18px #0001}h1{margin:0;font-size:24px}h2{font-size:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{font-weight:700;font-size:13px;display:block;margin:9px 0 5px}input,textarea{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:10px;font-size:15px}textarea{min-height:90px}.full{grid-column:1/-1}.choice{display:flex;gap:10px;flex-wrap:wrap}.choice label{margin:0}.choice input{display:none}.choice span{display:block;padding:11px;border:1px solid #d1d5db;border-radius:10px}.choice input:checked+span{background:#111827;color:#fff}.btn{border:0;border-radius:10px;padding:13px 16px;font-weight:700}.green{background:#16a34a;color:white}.hidden{display:none}.iban{background:#f8fafc;border:1px dashed #94a3b8;padding:11px;border-radius:10px;word-break:break-all}.muted{color:#64748b;font-size:12px}@media(max-width:600px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style></head>
+<body><header><h1>Ekip Toptan Ticaret</h1><p>Teknik Servis • Toptan / Perakende</p></header>
+<main><form id="f">
+<section class="card"><h2>İşlem Türü</h2><div class="choice">
+<label><input type="radio" name="type" value="Teknik Servis Randevusu" checked><span>🔧 Teknik Servis</span></label>
+<label><input type="radio" name="type" value="Toptan / Perakende Satış"><span>🛒 Toptan / Perakende</span></label></div></section>
+<section class="card"><h2>Müşteri</h2><div class="grid">
+<div><label>Ad Soyad *</label><input name="name" required></div><div><label>Telefon *</label><input name="phone" required></div>
+<div><label>Marka</label><input name="brand"></div><div><label>Model</label><input name="model"></div>
+<div class="full"><label>İşlem / Ürün *</label><input name="item" required></div>
+<div class="full"><label>Açıklama</label><textarea name="note"></textarea></div></div></section>
+<section class="card"><h2>📅 Randevu</h2><label><input id="want" type="checkbox"> Siparişle beraber tamir randevusu istiyorum</label>
+<div id="dates" class="grid hidden"><div><label>Tarih</label><input name="appointment_date" type="date"></div><div><label>Saat</label><input name="appointment_time" type="time"></div></div></section>
+<section id="ship" class="card hidden"><h2>🚚 Kargo Adresi</h2><div class="grid">
+<div><label>İl *</label><input name="city"></div><div><label>İlçe *</label><input name="district"></div>
+<div><label>Mahalle *</label><input name="neighborhood"></div><div><label>Posta Kodu *</label><input name="postal_code"></div>
+<div class="full"><label>Açık Adres *</label><textarea name="address"></textarea></div></div></section>
+<section id="pay" class="card hidden"><h2>🏦 Havale / EFT</h2><p class="muted">Ödeme yaptıktan sonra PDF dekont yükleyiniz.</p><div id="iban" class="iban">Yükleniyor...</div>
+<label>PDF Dekont *</label><input name="receipt" type="file" accept="application/pdf"></section>
+<section class="card"><button class="btn green" type="submit">Başvuruyu Gönder</button><p id="msg" class="muted"></p></section>
+</form></main>
+<script>
+const f=document.getElementById('f'), ship=document.getElementById('ship'), pay=document.getElementById('pay'), want=document.getElementById('want'), dates=document.getElementById('dates');
+function mode(){const sales=document.querySelector('input[name=type]:checked').value.includes('Toptan');ship.classList.toggle('hidden',!sales);pay.classList.toggle('hidden',!sales);want.checked=false;dates.classList.add('hidden');}
+document.querySelectorAll('input[name=type]').forEach(x=>x.onchange=mode);want.onchange=()=>dates.classList.toggle('hidden',!want.checked);
+fetch('/api/iban').then(r=>r.json()).then(x=>document.getElementById('iban').textContent=x.iban||'IBAN henüz tanımlanmadı.');
+f.onsubmit=async e=>{e.preventDefault();const data=new FormData(f), sales=data.get('type').includes('Toptan');data.set('appointment',want.checked?'1':'0');
+if(sales&&!data.get('receipt').name){alert('PDF dekont yükleyiniz.');return}
+const r=await fetch('/api/order',{method:'POST',body:data}), x=await r.json();if(!x.ok){alert(x.error||'Hata');return}
+document.getElementById('msg').textContent='Kayıt oluşturuldu. WhatsApp bildirimi açılıyor...';window.open(x.whatsapp,'_blank');};
+mode();
+</script></body></html>
